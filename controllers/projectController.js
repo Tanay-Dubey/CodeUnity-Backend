@@ -2,7 +2,6 @@ require("dotenv").config();
 const fs = require("fs");
 const Project = require("../models/Project.js");
 const path = require("path");
-const AdmZip = require('adm-zip');
 const multer = require("multer");
 
 let upload = multer().single("myfile");
@@ -73,5 +72,33 @@ const deleteProject = async (req, res) => {
     }
 }
 
+const addCollaborators = async (req, res) => {
+    const { projectId, collaboratorId } = req.body;
+    try {
+        const project = await Project.findByIdAndUpdate(projectId, {
+            $push: { collaborators: { user: collaboratorId } }
+        }, {
+            new: true
+        });
+        res.status(200).json({ result: true, project: project });
+    }
+    catch (err) {
+        res.status(500).json({ result:false, message: err.message });
+    }
+}
 
-module.exports = { createProject, uploadProject, getProject, renameProject, deleteProject };
+const removeCollaborators = async (req, res) => {
+    const { projectId, collaboratorId } = req.body;
+    try {
+        const project = Project.findByIdAndUpdate(projectId, { $pull: { collaborators: { user: collaboratorId } } },
+            { new: true });
+        res.status(200).json({result:true,project:project});
+    }
+    catch(err)
+    {
+        res.status(500).json({result:false,message:err.message});
+    }
+}
+
+
+module.exports = { createProject, uploadProject, getProject, renameProject, deleteProject,addCollaborators,removeCollaborators };

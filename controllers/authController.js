@@ -2,6 +2,7 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.js");
+const {getAccessToken,getRefreshToken} =require("../utils/registerToken.js")
 
 const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
@@ -13,12 +14,25 @@ const registerUser = async (req, res) => {
     try {
         const oldUser = await User.findOne({ username });
         if (oldUser) {
+            console.log(oldUser);
             res.status(400).json({ message: "Username is already available" });
+            return;
         }
 
         const user = await newUser.save();
-        const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_KEY, { expiresIn: "1h" });
-        res.status(200).json({ user, token });
+        const accesstoken=getAccessToken(user.id);
+        const refreshtoken=getRefreshToken(user.id);
+        res.cookie("accesstoken",accesstoken,
+        {
+            httpOnly:true,
+            maxAge:2*60*1000
+        });
+        res.cookie("refreshtoken",refreshtoken,
+        {
+            httpOnly:true,
+            maxAge:5*60*1000
+        });
+        res.status(200).json({ user });
     }
     catch (err) {
         res.status(500).json({ message: err.message });
@@ -39,9 +53,19 @@ const loginUser=async (req,res)=>{
             }
             else
             {
-                const token=jwt.sign({id:user.id,username:user.username},process.env.JWT_KEY,{
-                expiresIn:"1h"})
-                res.status(200).json({user,token})
+                const accesstoken=getAccessToken(user.id);
+                const refreshtoken=getRefreshToken(user.id);
+                res.cookie("accesstoken",accesstoken,
+                {
+                    httpOnly:true,
+                    maxAge:2*60*1000
+                });
+                res.cookie("refreshtoken",refreshtoken,
+                {
+                    httpOnly:true,
+                    maxAge:5*60*1000
+                });
+                res.status(200).json({user})
             }
         }
         else{
