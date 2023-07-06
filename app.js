@@ -6,6 +6,7 @@ const connectDB = require("./db");
 const authRouter = require("./routes/authRouter");
 const projectRouter = require("./routes/projectRouter");
 const tokenRouter = require("./routes/tokenRouter");
+const fileRouter=require("./routes/fileRouter");
 
 const app = express();
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use("/", tokenRouter);
 app.use("/auth", authRouter);
 app.use("/project", projectRouter);
 app.use("/file",fileRouter);
+app.use("/folder",folderRouter)
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

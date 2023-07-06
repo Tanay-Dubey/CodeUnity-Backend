@@ -56,7 +56,7 @@ const renameFile = async (req, res) => {
         //     return file;
         // });
         const filePath = path.join(__dirname, `../public/${path}`);
-        const file = await File.findByIdAndUpdate(fileId, { name: newName, path: filePaht }, { new: false });
+        const file = await File.findByIdAndUpdate(fileId, { name: newName, path: filePath }, { new: false });
 
         fs.rename(file.path, filePath, (err) => {
             if (err) {
@@ -95,7 +95,7 @@ const saveFile = async (req, res) => {
     const { path, content } = req.body;
     const filePath = path.join(__dirname, `../public/${path}`);
     try {
-        fs.writeFile(filePath, content, (err, data) => {
+        fs.writeFile(filePath, content, (err) => {
             if (err) {
                 console.log(err);
             }
