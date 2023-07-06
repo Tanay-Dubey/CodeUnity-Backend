@@ -3,8 +3,8 @@ const Schema=mongoose.Schema;
 
 const FileSchema=new Schema({
     name:{type:String},
-    type:{type:String,enum:["file","folder"]},
-    parent:{type:Schema.Types.ObjectId},
+    type:{type:String,enum:["file","folder","root"]},
+    parentId:{type:Schema.Types.ObjectId},
     path:{type:String},
     projectId:{type:Schema.Types.ObjectId,ref:"Project"}
 },{timestamps:true});
