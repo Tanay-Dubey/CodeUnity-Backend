@@ -7,6 +7,7 @@ const authRouter = require("./routes/authRouter");
 const projectRouter = require("./routes/projectRouter");
 const tokenRouter = require("./routes/tokenRouter");
 const fileRouter=require("./routes/fileRouter");
+const folderRouter=require("./routes/folderRouter");
 
 const app = express();
 app.use(express.json());

@@ -9,10 +9,10 @@ const registerUser = async (req, res) => {
     const hash = await bcrypt.hash(req.body.password, salt);
     req.body.password = hash;
     const newUser = new User(req.body);
-    const { username } = req.body;
+    const { email } = req.body;
 
     try {
-        const oldUser = await User.findOne({ username });
+        const oldUser = await User.findOne({ email });
         if (oldUser) {
             console.log(oldUser);
             res.status(400).json({ message: "Username is already available" });
@@ -40,10 +40,10 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser=async (req,res)=>{
-    const {username,password}=req.body;
+    const {email,password}=req.body;
     
     try{
-        const user=await User.findOne({username});
+        const user=await User.findOne({email});
         if(user)
         {
             const validity=await bcrypt.compare(password,user.password);

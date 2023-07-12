@@ -1,50 +1,42 @@
 require("dotenv").config();
 const fs = require("fs");
 const Project = require("../models/Project.js");
-const File = require("../models/File.js")
+const File = require("../models/File.js");
+const User=require("../models/User.js");
 const path = require("path");
 const multer = require("multer");
-const mongoose = require("mongoose");
+const { deleteFolderTree } = require("../utils/fileop.js")
+// const mongoose = require("mongoose");
 
 let upload = multer().single("myfile");
 
 const createProject = async (req, res) => {
     const { name, admin } = req.body;
-
-    const session = await mongoose.startSession();
-    (await session).startTransaction();
-
     try {
-        const newProject = new User({
+        const newProject = new Project({
             name,
-            admin,
-            collaborators:[admin]
+            admin
         });
-        const project = await newProject.save({ session });
+        const project = await newProject.save();
 
         const newFolder = new File({
             name,
             type: "root",
-            projectId: project.id
+            projectId: project._id
         });
-        const folder = await newFolder.save({ session });
+        const folder = await newFolder.save();
 
-        const updatedProject = await Project.findByIdAndUpdate(project.id, { folderId: folder.id }, { new: true }).session(session);
+        const updatedProject = await Project.findByIdAndUpdate(project.id, { folderId: folder.id }, { new: true });
+
+        await User.findByIdAndUpdate(admin,{$push:{projects:project.id}});
 
         const uniqueName = `${project.id}-${project.name}`;
         fs.mkdir(path.join(__dirname, `../public/${uniqueName}`), () => {
             console.log("Project created successfully")
-            res.status(200).json({ result: true, updatedProject });
+            res.status(200).json({ result: true, project: updatedProject });
         });
-
-        (await session).commitTransaction();
-        session.endSession();
-
-        console.log("Transaction commited successfully");
     }
     catch (err) {
-        await session.abortTransaction();
-        session.endSession();
         res.status(500).json({ result: false, message: err.message });
     }
 }
@@ -74,15 +66,16 @@ const getProject = async (req, res) => {
 }
 
 const renameProject = async (req, res) => {
-    const { projectId, newName } = req.body;
+    const { projectId, folderId, newName } = req.body;
     try {
         const oldProject = await Project.findByIdAndUpdate(projectId, { name: newName }, { new: false });
+        await File.findByIdAndUpdate(folderId,{name:newName});
+        // console.log(oldProject);
         const oldName = `${oldProject.id}-${oldProject.name}`;
-        fs.rename(path.join(__dirname, `..public/${oldName}`, path.join(__dirname, `..public/${oldProject.id}-${newName}`)), () => {
-            console.log("Project renamed successfully");
-
+        fs.rename(path.join(__dirname, `../public/${oldName}`), path.join(__dirname, `../public/${oldProject.id}-${newName}`), (err) => {
+            console.log("Project Renamed successfully");
+            res.status(200).json({ result: true });
         });
-        res.status(200).json({ result: true });
     }
     catch (err) {
         res.status(500).json({ result: false, message: err.message });
@@ -93,8 +86,10 @@ const deleteProject = async (req, res) => {
     const { projectId } = req.body;
     try {
         const project = await Project.findByIdAndDelete(projectId);
-        const projectname = `${project.id}-${project.name}`;
-        fs.rmdir(path.join(__dirname, `../public/${projectname}`), () => {
+        // await deleteFolderTree(project.folderId);
+        await File.deleteMany({projectId:project.id});
+        const projectname = `${project._id}-${project.name}`;
+        fs.rmdir(path.join(__dirname, `../public/${projectname}`),{recursive:true}, () => {
             console.log("Project deleted successfully");
             res.status(200).json({ result: true, message: "Project deleted successfully" });
         });
@@ -108,7 +103,7 @@ const addCollaborators = async (req, res) => {
     const { projectId, collaboratorId } = req.body;
     try {
         const project = await Project.findByIdAndUpdate(projectId, {
-            $push: { collaborators: { user: collaboratorId } }
+            $push: { collaborators: collaboratorId }
         }, {
             new: true
         });
@@ -122,7 +117,7 @@ const addCollaborators = async (req, res) => {
 const removeCollaborators = async (req, res) => {
     const { projectId, collaboratorId } = req.body;
     try {
-        const project = Project.findByIdAndUpdate(projectId, { $pull: { collaborators: { user: collaboratorId } } },
+        const project = await Project.findByIdAndUpdate(projectId, { $pull: { collaborators: collaboratorId } },
             { new: true });
         res.status(200).json({ result: true, project: project });
     }
@@ -131,17 +126,21 @@ const removeCollaborators = async (req, res) => {
     }
 }
 
-const fetchProjects=async(req,res)=>{
-    const {userId}=req.body;
-    try{
-        const projects=await Project.find({"collaborators.user":userId});
-        res.status(200).json({result:true,projects});
+const fetchProjects = async (req, res) => {
+    const { userId } = req.body;
+    try {
+        const user = await User.findById(userId);
+        const projects=user.projects;
+        projects.map(async(projectId)=>{
+            const project = await Project.findById(projectId);
+            return project;
+        })
+        res.status(200).json({ result: true, projects });
     }
-    catch(err)
-    {
-        res.status(500).json({result:false,message:err.message});
+    catch (err) {
+        res.status(500).json({ result: false, message: err.message });
     }
 }
 
 
-module.exports = { createProject, uploadProject, getProject, renameProject, deleteProject, addCollaborators, removeCollaborators,fetchProjects };
+module.exports = { createProject, uploadProject, getProject, renameProject, deleteProject, addCollaborators, removeCollaborators, fetchProjects };

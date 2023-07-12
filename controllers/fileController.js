@@ -1,15 +1,16 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const File = require("../models/File");
-const { getFilePath } = require("../utils/getFilePath")
+const { getFilePath } = require("../utils/fileop.js")
 const path = require("path")
 const fs = require("fs")
 
 const createFile = async (req, res) => {
-    const { name, path, projectId } = req.body;
+    const { name, filepath, projectId, parentId } = req.body;
     try {
         // const parentPath = await getFilePath(parentId, "");
-        const filePath = path.join(__dirname, `../public/${path}`);
+        const filePath = path.join(__dirname, `../public/${filepath}`);
+        console.log(filePath);
         const newFile = new File({
             name,
             type: "file",
@@ -18,10 +19,10 @@ const createFile = async (req, res) => {
             projectId
         });
 
-        const file = newFile.save();
+        const file = await newFile.save();
         fs.writeFile(filePath, "", () => {
             console.log("File created successfully");
-            res.status(200).json({ result: true, file });
+            res.status(200).json({ result: true, file: file });
         });
     }
     catch (err) {
@@ -49,18 +50,14 @@ const deleteFile = async (req, res) => {
 }
 
 const renameFile = async (req, res) => {
-    const { fileId, newName, path } = req.body;
+    const { fileId, newName, filepath } = req.body;
     try {
-        // const relPath = await getFilePath(fileId, "", async (fileId) => {
-        //     const file = await File.findByIdAndDelete(fileId);
-        //     return file;
-        // });
-        const filePath = path.join(__dirname, `../public/${path}`);
-        const file = await File.findByIdAndUpdate(fileId, { name: newName, path: filePath }, { new: false });
+        const filePath = path.join(__dirname, `../public/${filepath}`);
+        const file = await File.findByIdAndUpdate(fileId, { name: newName, path: filepath }, { new: false });
 
-        fs.rename(file.path, filePath, (err) => {
+        fs.rename(path.join(__dirname,`../public/${file.path}`), filePath, (err) => {
             if (err) {
-                console.log(err.message)
+                console.log(err.message);
             }
             else
                 console.log("File Renamed successfully");
@@ -73,8 +70,8 @@ const renameFile = async (req, res) => {
 }
 
 const getFile = async (req, res) => {
-    const { path } = req.body;
-    const filePath = path.join(__dirname, `../public/${path}`);
+    const { filepath } = req.body;
+    const filePath = path.join(__dirname, `../public/${filepath}`);
     try {
         fs.readFile(filePath, "utf-8", (err, data) => {
             if (err) {
@@ -92,8 +89,8 @@ const getFile = async (req, res) => {
 }
 
 const saveFile = async (req, res) => {
-    const { path, content } = req.body;
-    const filePath = path.join(__dirname, `../public/${path}`);
+    const { filepath, content } = req.body;
+    const filePath = path.join(__dirname, `../public/${filepath}`);
     try {
         fs.writeFile(filePath, content, (err) => {
             if (err) {

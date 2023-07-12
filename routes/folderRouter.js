@@ -10,6 +10,4 @@ router.put("/renamefolder", renameFolder);
 
 router.delete("/deletefolder", deleteFolder);
 
-router.post("/savefolder",saveFolder);
-
 module.exports = router;

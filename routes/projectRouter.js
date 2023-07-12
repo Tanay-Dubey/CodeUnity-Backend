@@ -16,6 +16,6 @@ router.delete("/deleteproject",deleteProject);
 
 router.put("/addcollab",addCollaborators);
 
-router.delete("/removecollab",removeCollaborators); 
+router.put("/removecollab",removeCollaborators); 
 
 module.exports = router;

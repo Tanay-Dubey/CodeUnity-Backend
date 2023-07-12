@@ -1,15 +1,15 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const File = require("../models/File");
-const { getFilePath, deleteFolder } = require("../utils/fileop")
+const { getFilePath, deleteFolderTree } = require("../utils/fileop")
 const path = require("path")
 const fs = require("fs")
 
 const createFolder = async (req, res) => {
-    const { name, path, projectId } = req.body;
+    const { name, folderpath, projectId, parentId } = req.body;
     try {
         // const parentPath = await getFilePath(parentId, "");
-        const folderPath = path.join(__dirname, `../public/${path}`);
+        const folderPath = path.join(__dirname, `../public/${folderpath}`);
         const newFile = new File({
             name,
             type: "folder",
@@ -18,15 +18,10 @@ const createFolder = async (req, res) => {
             projectId
         });
 
-        const folder = newFile.save();
+        const folder = await newFile.save();
         fs.mkdir(folderPath, (err) => {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                console.log("Folder Created Successfully");
-                res.status(200).json({ result: true, folder });
-            }
+            console.log("Folder Created Successfully");
+            res.status(200).json({ result: true, folder });
         })
     }
     catch (err) {
@@ -35,12 +30,10 @@ const createFolder = async (req, res) => {
 }
 
 const deleteFolder = async (req, res) => {
-    const { folderId, path } = req.body;
-    const session = mongoose.startSession();
-    (await session).startTransaction();
+    const { folderId, folderpath } = req.body;
     try {
-        deleteFolder(folderId, session);
-        const folderPath = path.join(__dirname, `../public/${path}`);
+        await deleteFolderTree(folderId);
+        const folderPath = path.join(__dirname, `../public/${folderpath}`);
         fs.rmdir(folderPath, { recursive: true, force: true }, (err) => {
             if (err) {
                 console.log(err);
@@ -50,24 +43,20 @@ const deleteFolder = async (req, res) => {
                 res.status(200).json({ result: true });
             }
         })
-            (await session).commitTransaction();
-        (await session).endSession();
     }
     catch (err) {
-        await session.abortTransaction();
-        session.endSession();
         res.status(400).json({ result: false, message: err.message });
     }
 }
 
 const renameFolder = async (req, res) => {
-    const { folderId, newName, path } = req.body;
+    const { folderId, newName, folderpath } = req.body;
     try {
         // const relPath = await getFilePath(fileId, "", async (fileId) => {
         //     const file = await File.findByIdAndDelete(fileId);
         //     return file;
         // });
-        const folderPath = path.join(__dirname, `../public/${path}`);
+        const folderPath = path.join(__dirname, `../public/${folderpath}`);
         const folder = await File.findByIdAndUpdate(folderId, { name: newName, path: folderPath }, { new: false });
 
         fs.rename(folder.path, folderPath, (err) => {
@@ -85,8 +74,8 @@ const renameFolder = async (req, res) => {
 }
 
 const getFolder = async (req, res) => {
-    const { folderId, path } = req.body;
-    const folderPath = path.join(__dirname, `../public/${path}`);
+    const { folderId, folderpath } = req.body;
+    // const folderPath = path.join(__dirname, `../public/${folderpath}`);
     try {
         const docs = await File.find({ parentId: folderId });
         res.status(200).json({ result: true, docs });

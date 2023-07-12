@@ -1,14 +1,10 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const collaboratorSchema = new Schema({
-  user: { type: Schema.Types.ObjectId, ref: "User" },
-});
-
 const projectSchema = new Schema({
   name: { type: String },
   admin: { type: Schema.Types.ObjectId, ref: "User" },
-  collaborators: [collaboratorSchema],
+  collaborators: [{ type: Schema.Types.ObjectId, ref: "User" }],
   folderId: { type: Schema.Types.ObjectId, ref: "File" },
   favourite:{type:Boolean,default:false}
 }, { timestamps: true });
