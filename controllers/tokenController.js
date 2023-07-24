@@ -13,7 +13,6 @@ const checkToken = async (req, res) => {
             if (refreshResult["result"]) {
                 res.cookie("accesstoken", refreshResult.accesstoken,
                     {
-                        httpOnly: true,
                         maxAge: 2 * 60 * 1000
                     });
                 res.status(200).json({ result: true, data: refreshResult.data, message: "Authenticated" });
@@ -33,7 +32,6 @@ const checkToken = async (req, res) => {
             if (refreshResult["result"]) {
                 res.cookie("accesstoken", refreshResult.accesstoken,
                     {
-                        httpOnly: true,
                         maxAge: 2 * 60 * 1000
                     });
                 res.status(200).json({ result: true, data: refreshResult.data, message: "Authenticated" });
